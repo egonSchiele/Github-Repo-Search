@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby -wKU
+require "yaml" 
+require "pp"
+require 'optparse'
+require 'open-uri'
+
+# Command line options
+app = Hash.new 
+options = OptionParser.new do |opts|
+  opts.on("-b", "--best", "If multiple repos are found, choose the best one.") do |opt|
+    app['best'] = opt
+  end
+end
+ 
+begin
+  options.parse!(ARGV)
+rescue OptionParser::ParseError => e
+  STDERR.puts "#{$0}: #{e}"
+end
+
+if ARGV.length < 1
+  STDERR.puts "#{$0}: You need to specify a repo to search for."
+  raise SystemExit
+end
+
+repo = ARGV[0]
+
+# STEP 1: Search for the correct repo
+search = open("http://github.com/api/v2/yaml/repos/search/#{repo}").read
+results = YAML.load(search) # y is now a hash containing the yaml data. 
+
+if results["repositories"].length > 1 && !app['best']
+  STDERR.puts "#{$0}: Multiple repos found, not sure which one you wanted.\nTo let me make the choice, rerun with the --best flag."
+  raise SystemExit
+end  
+
+repo_name = results["repositories"][0]["name"]
+username = results["repositories"][0]["username"]
+
+# STEP 2: Get the correct url
+show = open("http://github.com/api/v2/yaml/repos/show/#{username}/#{repo_name}").read
+repo_info = YAML.load(show) # y is now a hash containing the yaml data.
+url = repo_info["repository"][:url]
+
+if !url
+  STDERR.puts "#{$0}: Couldn't find the url."
+  raise SystemExit
+end  
+
+STDERR.puts "
+==
+
+Matched repository: #{repo_name}
+Description: #{repo_info["repository"][:description]}
+
+==
+"
+
+puts "#{url}.git"
