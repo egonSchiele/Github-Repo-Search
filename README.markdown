@@ -15,3 +15,23 @@ Cloning the rails repo, the old way:
 Vs. the new way, using ghs:
 	$ git clone `ghs -b rails`
 
+
+Getting ghs
+-----------
+
+	$ gem install ghs
+
+
+Usage
+-----
+
+Get a repo's clone url:
+
+	$ ghs [repo name]
+
+If there are multiple matches, ghs will stop by default.
+To choose the best match, use either of these:
+
+	$ ghs -b [reponame]
+	$ ghs --best [reponame]
+
