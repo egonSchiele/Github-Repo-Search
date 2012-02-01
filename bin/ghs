@@ -20,7 +20,7 @@ end
 
 if ARGV.length < 1
   STDERR.puts "#{$0}: You need to specify a repo to search for."
-  raise SystemExit
+  exit
 end
 
 repo = ARGV[0]
@@ -31,11 +31,16 @@ results = YAML.load(search) # y is now a hash containing the yaml data.
 
 if results["repositories"].length > 1 && !app['best']
   STDERR.puts "#{$0}: Multiple repos found, not sure which one you wanted.\nTo let me make the choice, rerun with the --best flag."
-  raise SystemExit
+  exit
 end  
 
-repo_name = results["repositories"][0]["name"]
-username = results["repositories"][0]["username"]
+repo_name = results["repositories"][0]["name"] || results["repositories"][0][:name]
+username = results["repositories"][0]["username"] || results["repositories"][0][:username]
+
+unless repo_name && username
+  STDERR.puts "#{$0}: Couldn't find the url."
+  exit
+end  
 
 # STEP 2: Get the correct url
 show = open("http://github.com/api/v2/yaml/repos/show/#{username}/#{repo_name}").read
@@ -44,7 +49,7 @@ url = repo_info["repository"][:url]
 
 if !url
   STDERR.puts "#{$0}: Couldn't find the url."
-  raise SystemExit
+  exit
 end  
 
 STDERR.puts "
