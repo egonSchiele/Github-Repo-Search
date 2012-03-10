@@ -20,7 +20,11 @@ end
 def find_user_repo(repo)
   user = find_user
   return nil if user == ""
-  get_repo(user, repo)
+  repo_info = get_repo(user, repo)
+  if repo_info
+    repo_info["repository"][:url] = "git@github.com:#{user}/#{repo}"
+  end
+  repo_info
 end
 
 def find_generic_repo(repo)
