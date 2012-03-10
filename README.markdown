@@ -1,37 +1,22 @@
-Github Repo Search (ghs)
-========================
+# Github Repo Search
 
-A script for the truly lazy github devs, ghs quickly finds clone urls for repositories.
+Quickly find clone urls for github repositories.
 
-Cloning the rails repo, the old way:
+# Install
 
-1. Open a browser
-2. Google "Rails github"
-3. Go to the Rails github page
-4. Copy the url
-5. Open a terminal
-6. Paste in the url
+	gem install ghs
 
-Vs. the new way, using ghs:
-	$ git clone `ghs -b rails`
-
-
-Getting ghs
------------
-
-	$ gem install ghs
-
-
-Usage
------
+# Usage
 
 Get a repo's clone url:
 
-	$ ghs [repo name]
+	ghs [repo name]
 
-If there are multiple matches, ghs will stop by default.
-To choose the best match, use either of these:
+If you have `github.user` in your global git config file, `ghs` will try to find one of your repos first.
 
-	$ ghs -b [reponame]
-	$ ghs --best [reponame]
+If there are multiple matches, `ghs` will stop by default.
+To choose the best match, use the `--best` flag:
+
+	ghs -b [reponame]
+	ghs --best [reponame]
 

@@ -1,64 +1,57 @@
-#!/usr/bin/env ruby -wKU
+#!/usr/bin/env ruby
+require 'rubygems'
 require "yaml" 
-require "pp"
-require 'optparse'
+require 'trollop'
 require 'open-uri'
 
-# Command line options
-app = Hash.new 
-options = OptionParser.new do |opts|
-  opts.on("-b", "--best", "If multiple repos are found, choose the best one.") do |opt|
-    app['best'] = opt
+def find_user
+  x = `git config github.user`
+  x.chomp
+end
+
+def get_repo(user, repo)
+  begin
+    YAML.load(open("http://github.com/api/v2/yaml/repos/show/#{user}/#{repo}").read)
+  rescue
+    nil
   end
 end
- 
-begin
-  options.parse!(ARGV)
-rescue OptionParser::ParseError => e
-  STDERR.puts "#{$0}: #{e}"
+
+def find_user_repo(repo)
+  user = find_user
+  return nil if user == ""
+  get_repo(user, repo)
 end
 
-if ARGV.length < 1
-  STDERR.puts "#{$0}: You need to specify a repo to search for."
-  exit
+def find_generic_repo(repo)
+  results = YAML.load(open("http://github.com/api/v2/yaml/repos/search/#{repo}").read)
+  Trollop::die "Couldn't find a url" if results["repositories"].empty?
+  Trollop::die "Multiple repos found, not sure which one you wanted.\nTo let me make the choice, rerun with the --best flag" unless results["repositories"].size == 1 || OPTS[:best]
+  user = results["repositories"][0][:username]
+  get_repo(user, repo)
 end
 
-repo = ARGV[0]
+OPTS = Trollop::options do
+  banner <<-EOS
+  Find the clone url for any repo on github, quickly.
+  Usage: #{$0} [repo name]
+  Use it to clone a repo: git clone `ghs [reponame]`
+  EOS
+  opt :best, "If multiple repos are found, choose the first one."
+end
 
-# STEP 1: Search for the correct repo
-search = open("http://github.com/api/v2/yaml/repos/search/#{repo}").read
-results = YAML.load(search) # y is now a hash containing the yaml data. 
-
-if results["repositories"].length > 1 && !app['best']
-  STDERR.puts "#{$0}: Multiple repos found, not sure which one you wanted.\nTo let me make the choice, rerun with the --best flag."
-  exit
-end  
-
-repo_name = results["repositories"][0]["name"] || results["repositories"][0][:name]
-username = results["repositories"][0]["username"] || results["repositories"][0][:username]
-
-unless repo_name && username
-  STDERR.puts "#{$0}: Couldn't find the url."
-  exit
-end  
-
-# STEP 2: Get the correct url
-show = open("http://github.com/api/v2/yaml/repos/show/#{username}/#{repo_name}").read
-repo_info = YAML.load(show) # y is now a hash containing the yaml data.
-url = repo_info["repository"][:url]
-
-if !url
-  STDERR.puts "#{$0}: Couldn't find the url."
-  exit
-end  
+Trollop::die("no repo specified") if ARGV.empty?
+result = find_user_repo(ARGV[0]) || find_generic_repo(ARGV[0])
+Trollop::die "couldn't find a url." unless result
+result = result["repository"]
 
 STDERR.puts "
 ==
 
-Matched repository: #{repo_name}
-Description: #{repo_info["repository"][:description]}
+Matched repository: #{result[:name]}
+Description: #{result[:description]}
 
 ==
 "
 
-puts "#{url}.git"
+puts "#{result[:url]}.git"

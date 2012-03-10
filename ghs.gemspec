@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'ghs'
-  s.version     = '0.1.3'
+  s.version     = '0.1.4'
   s.date        = '2012-02-01'
   s.summary     = "Find the clone url for repos on Github"
   s.description = "Find the clone url for repos on Github"
@@ -10,4 +10,3 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/egonSchiele/Github-Repo-Search"
   s.executables = "ghs"
 end
-
