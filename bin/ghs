@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'rubygems'
-require "yaml" 
+require "json" 
 require 'trollop'
 require 'open-uri'
 require 'contracts'
@@ -10,8 +10,9 @@ def Contract.failure_callback(data)
   exit
 end
 
-class Object
 include Contracts
+use_contracts self
+
 Repo = Or[Hash, nil]
 
 Contract String
@@ -20,41 +21,39 @@ def find_user
   x.chomp
 end
 
+Contract String, Repo
+def req(url)
+    JSON.parse(open("https://api.github.com#{url}").read)
+  rescue OpenURI::HTTPError => e
+    nil
+end
+
 Contract String, String, Repo
 def get_repo(user, repo)
-  begin
-    YAML.load(open("http://github.com/api/v2/yaml/repos/show/#{user}/#{repo}").read)
-  rescue
-    nil
-  end
+  req "/repos/#{user}/#{repo}"
 end
 
 Contract String, Repo
 def find_user_repo(repo)
   user = find_user
   return nil if user == ""
-  repo_info = get_repo(user, repo)
-  if repo_info
-    repo_info["repository"][:url] = "git@github.com:#{user}/#{repo}"
-  end
-  repo_info
+  get_repo(user, repo)
 end
 
 Contract String, Repo
 def find_generic_repo(repo)
-  results = YAML.load(open("http://github.com/api/v2/yaml/repos/search/#{repo}").read)
+  results = req "/legacy/repos/search/#{repo}"
   Trollop::die "Couldn't find a url" if results["repositories"].empty?
   Trollop::die "Multiple repos found, not sure which one you wanted.\nTo let me make the choice, rerun with the --best flag" unless results["repositories"].size == 1 || OPTS[:best]
-  user = results["repositories"][0][:username]
+  user = results["repositories"][0]["username"]
   get_repo(user, repo)
-end
 end
 
 OPTS = Trollop::options do
   banner <<-EOS
   Find the clone url for any repo on github, quickly.
   Usage: #{$0} [repo name]
-  Use it to clone a repo: git clone `ghs [reponame]`
+  Use it to clone a repo: git clone `ghs [repo name]`
   EOS
   opt :best, "If multiple repos are found, choose the first one."
 end
@@ -62,15 +61,14 @@ end
 Trollop::die("no repo specified") if ARGV.empty?
 result = find_user_repo(ARGV[0]) || find_generic_repo(ARGV[0])
 Trollop::die "couldn't find a url." unless result
-result = result["repository"]
 
-STDERR.puts "
+STDERR.puts %{
 ==
 
-Matched repository: #{result[:name]}
-Description: #{result[:description]}
+Matched repository: #{result["name"]}
+Description: #{result["description"]}
 
 ==
-"
+}
 
-puts "#{result[:url]}.git"
+puts result["ssh_url"]
