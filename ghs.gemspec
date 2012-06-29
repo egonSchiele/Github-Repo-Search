@@ -10,5 +10,5 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/egonSchiele/Github-Repo-Search"
   s.executables = "ghs"
   s.add_dependency("trollop")
-  s.add_dependency("contracts >= 0.0.7")
+  s.add_runtime_dependency 'contracts', '>= 0.0.7'
 end
