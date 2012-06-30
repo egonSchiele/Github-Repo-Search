@@ -15,32 +15,32 @@ use_contracts self
 
 Repo = Or[Hash, nil]
 
-Contract String
+Contract nil => String
 def find_user
   x = `git config github.user`
   x.chomp
 end
 
-Contract String, Repo
+Contract String => Repo
 def req(url)
     JSON.parse(open("https://api.github.com#{url}").read)
   rescue OpenURI::HTTPError => e
     nil
 end
 
-Contract String, String, Repo
+Contract String, String => Repo
 def get_repo(user, repo)
   req "/repos/#{user}/#{repo}"
 end
 
-Contract String, Repo
+Contract String => Repo
 def find_user_repo(repo)
   user = find_user
   return nil if user == ""
   get_repo(user, repo)
 end
 
-Contract String, Repo
+Contract String => Repo
 def find_generic_repo(repo)
   results = req "/legacy/repos/search/#{repo}"
   Trollop::die "Couldn't find a url" if results["repositories"].empty?
