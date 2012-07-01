@@ -11,7 +11,6 @@ def Contract.failure_callback(data)
 end
 
 include Contracts
-use_contracts self
 
 Repo = Or[Hash, nil]
 
