@@ -5,14 +5,13 @@ require 'trollop'
 require 'open-uri'
 require 'contracts'
 
+include Contracts
+Repo = Or[Hash, nil]
+
 def Contract.failure_callback(data)
   puts "Oops: expected #{data[:contract]}, got #{data[:arg]} in #{data[:method].name}. Exiting."
   exit
 end
-
-include Contracts
-
-Repo = Or[Hash, nil]
 
 Contract nil => String
 def find_user
